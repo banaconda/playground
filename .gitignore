@@ -1,0 +1,5 @@
+.DS_Store
+.vscode/
+*.pyc
+image_matching/image.png
+image_matching/pycallgraph.png
