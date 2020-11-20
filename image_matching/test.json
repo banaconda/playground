@@ -1,0 +1,97 @@
+
+// vlan 10 만들기
+{
+    "method": "set",
+    "tableName": "vlan",
+    "data": {
+        "vlanId": 10
+    }
+},
+
+
+// interface vlan 10 애 10.10.10.2/24 만들기
+{
+    "method": "set",
+    "tableName": "interfaceVlan",
+    "data": {
+        "vlanId": 10,
+        "vrf": null,
+        "ip": "10.10.10.2",
+        "prefixLength": 24,
+        "vip": null
+    }
+}
+
+// interface port 10번에 access vlan 1  만들기
+{
+    "method": "set",
+    "tableName": "interfacePort",
+    "data": {
+        "portNo": 10,
+        "portMode": "access",
+        "nativeVlan": 1,
+        "trunkVlanList": null,
+        "ip": null,
+        "prefixLength": null,
+        "vrf": null
+    }
+}
+
+// interface port 10번에 trunk native: 10, trunk vlan range 200,250,300~400 만들기
+{
+    "method": "set",
+    "tableName": "interfacePort",
+    "data": {
+        "portNo": 10,
+        "portMode": "trunk",
+        "nativeVlan": 10,
+        "trunkVlanList": [
+            "200",
+            "250",
+            "300-400"
+        ],
+        "ip": null,
+        "prefixLength": null,
+        "vrf": null
+    }
+}
+
+// interface port 10번에 l3 port ip 10.10.10.2/24 만들기
+{
+    "method": "set",
+    "tableName": "interfacePort",
+    "data": {
+        "portNo": 10,
+        "portMode": "l3",
+        "nativeVlan": null,
+        "trunkVlanList": null,
+        "ip": "10.10.10.2",
+        "prefixLength": 24,
+        "vrf": null
+    }
+}
+
+
+// static route dst cidr 10.10.10.0/24 next-hop 20.20.20.1 추가하기
+{
+    "method": "set",
+    "tableName": "staticRoute",
+    "data": {
+        "vrf": null,
+        "dstCidr": "10.10.10.0/24",
+        "nextHop": "20.20.20.1"
+    }
+}
+
+// vrrp id: 10, interface vlan: 10, prioriry:100, vip: 10.10.10.1 추가하기
+{
+    "method": "set",
+    "tableName": "vrrp",
+    "data": {
+        "vrid": 10,
+        "vrf": null,
+        "interface": "vlan10",
+        "vip": "10.10.10.1",
+        "priority": 100
+    }
+}
