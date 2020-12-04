@@ -3,3 +3,5 @@
 *.pyc
 image_matching/image.png
 image_matching/pycallgraph.png
+
+build/
