@@ -4,7 +4,10 @@ project(io_performance VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-add_executable(io_performance main.cpp)
+add_executable(io_performance main.c)
+
+TARGET_LINK_LIBRARIES(io_performance pthread)
+
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
