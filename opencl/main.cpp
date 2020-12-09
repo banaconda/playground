@@ -82,26 +82,30 @@ test()
     cl_queue_properties *queue_properties = NULL;
     cl_command_queue queue = clCreateCommandQueueWithProperties(context, devices[0], queue_properties, &err);
 
-    // 5. BUFFER
+    // 6. SET BUFFER
+    // Create buffer
     cl_mem write_buffer = CL_WRAP_AUTO(clCreateBuffer, context, CL_MEM_WRITE_ONLY, NWITEMS * sizeof(cl_uint), NULL);
     cl_mem read_buffer = CL_WRAP_AUTO(clCreateBuffer, context, CL_MEM_READ_ONLY, NWITEMS * sizeof(cl_uint), NULL);
 
+    // Copy data to device from host
     cl_uint arr[NWITEMS];
     for (int i = 0; i < NWITEMS; i++) {
         arr[i] = i * 2;
     }
     CL_WRAP(clEnqueueWriteBuffer, queue, read_buffer, CL_TRUE, 0, NWITEMS * sizeof(cl_uint), arr, 0, NULL, NULL);
 
-    // 6. Launch the kernel. Let OpenCL pick the local work size.
+    // 7. Launch the kernel. Let OpenCL pick the local work size.
     size_t global_work_size = NWITEMS;
     CL_WRAP(clSetKernelArg, kernel, 0, sizeof(write_buffer), (void *)&write_buffer);
     CL_WRAP(clSetKernelArg, kernel, 1, sizeof(read_buffer), (void *)&read_buffer);
-
     CL_WRAP(clEnqueueNDRangeKernel, queue, kernel, 1, NULL, &global_work_size, NULL, 0, NULL, NULL);
 
+    // 8. FINISH
+    // Wait for finishing
     CL_WRAP(clFinish, queue);
+    printf("finish\n");
 
-    // 7. Look at the results via synchronous buffer map.
+    // 9. GET BUFFER
     cl_uint *ptr = (cl_uint *)CL_WRAP_AUTO(clEnqueueMapBuffer, queue, write_buffer, CL_TRUE, CL_MAP_READ, 0,
                                            NWITEMS * sizeof(cl_uint), 0, NULL, NULL);
 
