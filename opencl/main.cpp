@@ -29,7 +29,7 @@ test()
     printf("platform: num=%d, err=%d\n", num_platforms, err);
 
     // Alloc count of platforms
-    platforms = malloc(sizeof(cl_platform_id) * num_platforms);
+    platforms = (cl_platform_id *)malloc(sizeof(cl_platform_id) * num_platforms);
 
     // Get platforms
     CL_WRAP(clGetPlatformIDs, num_platforms, platforms, NULL);
@@ -42,7 +42,7 @@ test()
     printf("device: num=%d, err=%d\n", num_devices, err);
 
     // Alloc count of devices
-    devices = malloc(sizeof(cl_device_id) * num_devices);
+    devices = (cl_device_id *)malloc(sizeof(cl_device_id) * num_devices);
 
     // Get devices
     CL_WRAP(clGetDeviceIDs, platforms[0], CL_DEVICE_TYPE_GPU, num_devices, devices, NULL);
@@ -65,28 +65,26 @@ test()
     void(CL_CALLBACK * pfn_notify)(const char *errinfo, const void *private_info, size_t cb, void *user_data) = NULL;
     void *user_data = NULL;
     // cl_context context = clCreateContext(context_properties, num_devices, devices, pfn_notify, user_data, &err);
-    CL_WRAP_DECL(cl_context, context, clCreateContextFromType, context_properties, CL_DEVICE_TYPE_GPU, pfn_notify,
-                 user_data);
+    cl_context context =
+        CL_WRAP_AUTO(clCreateContextFromType, context_properties, CL_DEVICE_TYPE_GPU, pfn_notify, user_data);
 
     // 4. PROGRAM
     const char *kernel_codes[] = {
         kernel_code_load("kernels/test.cl"), //
         kernel_code_load("kernels/test2.cl") //
     };
-
     cl_uint count = sizeof(kernel_codes) / sizeof(char *);
-    CL_WRAP_DECL(cl_program, program, clCreateProgramWithSource, context, count, kernel_codes, NULL);
-
+    cl_program program = CL_WRAP_AUTO(clCreateProgramWithSource, context, count, kernel_codes, NULL);
     CL_WRAP(clBuildProgram, program, num_devices, devices, NULL, NULL, NULL);
-    CL_WRAP_DECL(cl_kernel, kernel, clCreateKernel, program, "memcpy");
+    cl_kernel kernel = CL_WRAP_AUTO(clCreateKernel, program, "memcpy");
 
-    // 4. QUEUE
+    // 5. QUEUE
     cl_queue_properties *queue_properties = NULL;
     cl_command_queue queue = clCreateCommandQueueWithProperties(context, devices[0], queue_properties, &err);
 
     // 5. BUFFER
-    CL_WRAP_DECL(cl_mem, write_buffer, clCreateBuffer, context, CL_MEM_WRITE_ONLY, NWITEMS * sizeof(cl_uint), NULL);
-    CL_WRAP_DECL(cl_mem, read_buffer, clCreateBuffer, context, CL_MEM_READ_ONLY, NWITEMS * sizeof(cl_uint), NULL);
+    cl_mem write_buffer = CL_WRAP_AUTO(clCreateBuffer, context, CL_MEM_WRITE_ONLY, NWITEMS * sizeof(cl_uint), NULL);
+    cl_mem read_buffer = CL_WRAP_AUTO(clCreateBuffer, context, CL_MEM_READ_ONLY, NWITEMS * sizeof(cl_uint), NULL);
 
     cl_uint arr[NWITEMS];
     for (int i = 0; i < NWITEMS; i++) {
@@ -104,8 +102,8 @@ test()
     CL_WRAP(clFinish, queue);
 
     // 7. Look at the results via synchronous buffer map.
-    CL_WRAP_DECL(cl_uint *, ptr, (cl_uint *)clEnqueueMapBuffer, queue, write_buffer, CL_TRUE, CL_MAP_READ, 0,
-                 NWITEMS * sizeof(cl_uint), 0, NULL, NULL);
+    cl_uint *ptr = (cl_uint *)CL_WRAP_AUTO(clEnqueueMapBuffer, queue, write_buffer, CL_TRUE, CL_MAP_READ, 0,
+                                           NWITEMS * sizeof(cl_uint), 0, NULL, NULL);
 
     int i;
     for (i = NWITEMS - 10; i < NWITEMS; i++)
