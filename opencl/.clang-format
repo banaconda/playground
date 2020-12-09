@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: false
+AlwaysBreakAfterDefinitionReturnType: true
+BreakBeforeBraces: Linux
+AlignConsecutiveMacros: true
+SortIncludes: false
+ForEachMacros: []
