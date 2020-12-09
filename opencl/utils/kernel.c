@@ -14,8 +14,7 @@ kernel_code_load(const char *filename)
     size_t size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    kernel_code_list = (kernel_code_t *)realloc(kernel_code_list,
-                                                sizeof(kernel_code_t) * (kernel_code_list_len + 1));
+    kernel_code_list = (kernel_code_t *)realloc(kernel_code_list, sizeof(kernel_code_t) * (kernel_code_list_len + 1));
     kernel_code_t *kc = &kernel_code_list[kernel_code_list_len];
     kernel_code_list_len++;
 

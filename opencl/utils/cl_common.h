@@ -12,7 +12,6 @@
         }                                                                                                              \
     }
 
-
 #define CL_WRAP_AUTO(func, ...)                                                                                        \
     ({                                                                                                                 \
         cl_int err;                                                                                                    \
