@@ -20,7 +20,8 @@ kernel_code_load(const char *filename)
     kernel_code_list_len++;
 
     strcpy(kc->filename, filename);
-    kc->kernel_code = (char *)malloc(size);
+    kc->kernel_code = (char *)malloc(size + 1);
     fread(kc->kernel_code, 1, size, fp);
+    kc->kernel_code[size] = '\0';
     return kc->kernel_code;
 }

@@ -13,7 +13,7 @@ include_directories(${PROJECT_SOURCE_DIR}/utils)
 file(GLOB UTILS_SOURCES "utils/*.c")
 
 add_executable(opencl main.c ${UTILS_SOURCES})
-TARGET_LINK_LIBRARIES(opencl OpenCL)
+TARGET_LINK_LIBRARIES(opencl OpenCL clBLAS)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
