@@ -1,6 +1,6 @@
 #ifndef __CL_COMMON_H__
 #define __CL_COMMON_H__
-
+#include <stdio.h>
 #include <CL/cl.h>
 
 #define CL_WRAP(func, ...)                                                                                             \
