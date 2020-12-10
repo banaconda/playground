@@ -1,4 +1,7 @@
-#include <CL/cl.hpp>
+#define CL_HPP_ENABLE_EXCEPTIONS
+#define CL_HPP_TARGET_OPENCL_VERSION 200
+
+#include <CL/cl2.hpp>
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -24,7 +27,6 @@ class HppTest
             platform = p;
         }
 
-
         platform.getDevices(CL_DEVICE_TYPE_GPU, &allDevices);
         cl::Device device = allDevices[0];
         for (auto &d : allDevices) {
@@ -33,7 +35,23 @@ class HppTest
         }
 
         cl::Context context({device});
-        cl::CommandQueue queue(context, device);
+        vector<cl::CommandQueue> queues;
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
+        queues.push_back(cl::CommandQueue{context, device});
 
         // KERNEL
         cl::Program::Sources programSources =
@@ -45,22 +63,38 @@ class HppTest
             exit(1);
         }
 
-
         // DATA 처리
-        std::vector<cl_uint> h_dst(NUM_WORK_ITEMS), h_src(NUM_WORK_ITEMS);
+        cl_uint h_dst[NUM_WORK_ITEMS];
+        cl_uint h_src[NUM_WORK_ITEMS];
         for (int i = 0; i < NUM_WORK_ITEMS; i++) {
             h_src[i] = i;
         }
-        cl::Buffer d_dst(context, CL_MEM_READ_WRITE, sizeof(cl_uint) * NUM_WORK_ITEMS);
-        cl::Buffer d_src(context, h_src.begin(), h_src.end(), CL_TRUE);
 
-        cl::Kernel k_memcpy(program, "memcpy");
-        k_memcpy.setArg(0, d_dst);
-        k_memcpy.setArg(1, d_src);
-        queue.enqueueNDRangeKernel(k_memcpy, cl::NullRange, cl::NDRange(NUM_WORK_ITEMS), cl::NullRange);
-        queue.finish();
+        cl::Buffer d_dst(context, CL_MEM_WRITE_ONLY, sizeof(cl_uint) * NUM_WORK_ITEMS);
+        cl::Buffer d_src(context, CL_MEM_READ_ONLY, sizeof(cl_uint) * NUM_WORK_ITEMS);
+        size_t group_count = NUM_WORK_ITEMS / queues.size();
+        size_t offset = 0;
+        for (auto queue : queues) {
+            queue.enqueueWriteBuffer(d_src, CL_TRUE, offset, group_count * sizeof(cl_uint), &h_src[offset]);
+            offset += group_count;
+        }
 
-        queue.enqueueReadBuffer(d_dst, CL_TRUE, 0, h_dst.size() * sizeof(cl_uint), h_dst.data());
+        // KERNEL
+        // KernelFunctor version
+        auto k_memcpy = cl::KernelFunctor<cl::Buffer, cl::Buffer>(program, "memcpy");
+
+        offset = 0;
+        for (auto queue : queues) {
+            k_memcpy(cl::EnqueueArgs(queue, cl::NDRange(offset), cl::NDRange(group_count), cl::NullRange), d_dst,
+                     d_src);
+            offset += group_count;
+        }
+
+        offset = 0;
+        for (auto queue : queues) {
+            queue.enqueueReadBuffer(d_dst, CL_TRUE, offset, group_count * sizeof(cl_uint), &h_dst[offset]);
+            offset += group_count;
+        }
 
         for (auto i : h_dst) {
             cout << i << endl;
