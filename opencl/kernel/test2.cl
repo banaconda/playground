@@ -1,4 +1,5 @@
-kernel void memcpy(global uint *dst, global uint *src)
+__kernel void memcpy(__global uint *dst, __global uint *src, int n)
 {
-    dst[get_global_id(0)] = src[get_global_id(0)] * 2;
+    int i = get_global_id(0);
+    dst[i] = src[i];
 }

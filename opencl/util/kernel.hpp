@@ -6,17 +6,16 @@ using namespace std;
 
 class Kernel
 {
-  public:
     static char *
-    loadKernelCode(std::string filename)
+    loadKernelCode(string filename)
     {
-        std::ifstream ifs;
-        ifs.open(filename, std::ios::in | std::ios::binary | std::ios::ate);
+        ifstream ifs;
+        ifs.open(filename, ios::in | ios::binary | ios::ate);
         if (ifs.is_open() == false) {
             return NULL;
         }
-        std::streampos size = ifs.tellg();
-        ifs.seekg(0, std::ios::beg);
+        streampos size = ifs.tellg();
+        ifs.seekg(0, ios::beg);
         char *source = new char[size];
         ifs.read(source, size);
         ifs.close();
@@ -25,13 +24,31 @@ class Kernel
     }
 
     static cl::Program::Sources
-    getSource(std::vector<std::string> filenameList)
+    getSource(vector<string> filenameList)
     {
         cl::Program::Sources sources;
         for (auto filename : filenameList) {
-            char * source = loadKernelCode(filename);
+            char *source = loadKernelCode(filename);
             sources.push_back({source, strlen(source)});
         }
         return sources;
+    }
+
+  public:
+    static cl::Program
+    buildProgram(cl::Context &context, vector<cl::Device> allDevices, vector<string> filenameList)
+    {
+        cl::Program::Sources programSources = Kernel::getSource(filenameList);
+
+        cl::Program program(context, programSources);
+        try {
+            program.build(allDevices);
+        } catch (...) {
+            for (auto &device : allDevices) {
+                cout << "Error building: " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << endl;
+            }
+        }
+
+        return program;
     }
 };

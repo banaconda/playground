@@ -1,98 +1,102 @@
-#include <CL/cl.h>
-#include <CL/cl_ext.h>
-#include <clBLAS.h>
+#include <sys/types.h>
 #include <stdio.h>
-#include <string.h>
 
-static const size_t N = 7;
-static cl_float X[] = {
-    1, 2, -11, 17, 5, 6, 81,
-};
-static const int incx = 1;
-static cl_float Y[] = {
-    1, 5, 6, 4, 9, 10, 4,
-};
+/* Include the clBLAS header. It includes the appropriate OpenCL headers */
+#include <clBLAS.h>
 
-static cl_float dotProduct;
+/* This example uses predefined matrices and their characteristics for
+ * simplicity purpose.
+ */
+
+#define M 4
+#define N 3
+#define K 5
+
+static const cl_float alpha = 10;
+
+static const cl_float A[M * K] = {
+    11, 12, 13, 14, 15, //
+    21, 22, 23, 24, 25, //
+    31, 32, 33, 34, 35, //
+    41, 42, 43, 44, 45, //
+};
+static const size_t lda = K; /* i.e. lda = K */
+
+static const cl_float B[K * N] = {
+    11, 12, 13, //
+    21, 22, 23, //
+    31, 32, 33, //
+    41, 42, 43, //
+    51, 52, 53, //
+};
+static const size_t ldb = N; /* i.e. ldb = N */
+
+static const cl_float beta = 20;
+
+static cl_float C[M * N] = {
+    11, 12, 13, //
+    21, 22, 23, //
+    31, 32, 33, //
+    41, 42, 43, //
+};
+static const size_t ldc = N; /* i.e. ldc = N */
+
+static cl_float result[M * N];
 
 int
-blas_test()
+blas_test(void)
 {
-    static const int incy = 1;
     cl_int err;
     cl_platform_id platform = 0;
     cl_device_id device = 0;
     cl_context_properties props[3] = {CL_CONTEXT_PLATFORM, 0, 0};
     cl_context ctx = 0;
     cl_command_queue queue = 0;
-    cl_mem bufX, bufY, bufDotP, scratchBuff;
+    cl_mem bufA, bufB, bufC;
     cl_event event = NULL;
     int ret = 0;
-    int lenX = 1 + (N - 1) * abs(incx);
-    int lenY = 1 + (N - 1) * abs(incy);
+
     /* Setup OpenCL environment. */
     err = clGetPlatformIDs(1, &platform, NULL);
-    if (err != CL_SUCCESS) {
-        printf("clGetPlatformIDs() failed with %d\n", err);
-        return 1;
-    }
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    if (err != CL_SUCCESS) {
-        printf("clGetDeviceIDs() failed with %d\n", err);
-        return 1;
-    }
+
     props[1] = (cl_context_properties)platform;
     ctx = clCreateContext(props, 1, &device, NULL, NULL, &err);
-    if (err != CL_SUCCESS) {
-        printf("clCreateContext() failed with %d\n", err);
-        return 1;
-    }
-    queue = clCreateCommandQueueWithProperties(ctx, device, 0, &err);
-    if (err != CL_SUCCESS) {
-        printf("clCreateCommandQueueWithProperties() failed with %d\n", err);
-        clReleaseContext(ctx);
-        return 1;
-    }
-    /* Setup clblas. */
+    queue = clCreateCommandQueue(ctx, device, 0, &err);
+
+    /* Setup clBLAS */
     err = clblasSetup();
-    if (err != CL_SUCCESS) {
-        printf("clblasSetup() failed with %d\n", err);
-        clReleaseCommandQueue(queue);
-        clReleaseContext(ctx);
-        return 1;
-    }
+
     /* Prepare OpenCL memory objects and place matrices inside them. */
-    bufX = clCreateBuffer(ctx, CL_MEM_READ_ONLY, (lenX * sizeof(cl_float)), NULL, &err);
-    bufY = clCreateBuffer(ctx, CL_MEM_READ_ONLY, (lenY * sizeof(cl_float)), NULL, &err);
-    // Allocate 1 element space for dotProduct
-    bufDotP = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, (sizeof(cl_float)), NULL, &err);
-    // Allocate minimum of N elements
-    scratchBuff = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (N * sizeof(cl_float)), NULL, &err);
-    err = clEnqueueWriteBuffer(queue, bufX, CL_TRUE, 0, (lenX * sizeof(cl_float)), X, 0, NULL, NULL);
-    err = clEnqueueWriteBuffer(queue, bufY, CL_TRUE, 0, (lenY * sizeof(cl_float)), Y, 0, NULL, NULL);
-    /* Call clblas function. */
-    err = clblasSdot(N, bufDotP, 0, bufX, 0, incx, bufY, 0, incy, scratchBuff, 1, &queue, 0, NULL, &event);
-    if (err != CL_SUCCESS) {
-        printf("clblasSdot() failed with %d\n", err);
-        ret = 1;
-    } else {
-        /* Wait for calculations to be finished. */
-        err = clWaitForEvents(1, &event);
-        /* Fetch results of calculations from GPU memory. */
-        err = clEnqueueReadBuffer(queue, bufDotP, CL_TRUE, 0, sizeof(cl_float), &dotProduct, 0, NULL, NULL);
-        printf("Result dot product: %f\n", dotProduct);
-    }
-    /* Release OpenCL events. */
-    clReleaseEvent(event);
+    bufA = clCreateBuffer(ctx, CL_MEM_READ_ONLY, M * K * sizeof(*A), NULL, &err);
+    bufB = clCreateBuffer(ctx, CL_MEM_READ_ONLY, K * N * sizeof(*B), NULL, &err);
+    bufC = clCreateBuffer(ctx, CL_MEM_READ_WRITE, M * N * sizeof(*C), NULL, &err);
+
+    err = clEnqueueWriteBuffer(queue, bufA, CL_TRUE, 0, M * K * sizeof(*A), A, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(queue, bufB, CL_TRUE, 0, K * N * sizeof(*B), B, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(queue, bufC, CL_TRUE, 0, M * N * sizeof(*C), C, 0, NULL, NULL);
+
+    /* Call clBLAS extended function. Perform gemm for the lower right sub-matrices */
+    err = clblasSgemm(clblasRowMajor, clblasNoTrans, clblasNoTrans, M, N, K, alpha, bufA, 0, lda, bufB, 0, ldb, beta,
+                      bufC, 0, ldc, 1, &queue, 0, NULL, &event);
+
+    /* Wait for calculations to be finished. */
+    err = clWaitForEvents(1, &event);
+
+    /* Fetch results of calculations from GPU memory. */
+    err = clEnqueueReadBuffer(queue, bufC, CL_TRUE, 0, M * N * sizeof(*result), result, 0, NULL, NULL);
+
     /* Release OpenCL memory objects. */
-    clReleaseMemObject(bufY);
-    clReleaseMemObject(bufX);
-    clReleaseMemObject(bufDotP);
-    clReleaseMemObject(scratchBuff);
-    /* Finalize work with clblas. */
+    clReleaseMemObject(bufC);
+    clReleaseMemObject(bufB);
+    clReleaseMemObject(bufA);
+
+    /* Finalize work with clBLAS */
     clblasTeardown();
+
     /* Release OpenCL working objects. */
     clReleaseCommandQueue(queue);
     clReleaseContext(ctx);
+
     return ret;
 }

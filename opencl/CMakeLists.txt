@@ -10,6 +10,7 @@ enable_testing()
 include_directories(${PROJECT_SOURCE_DIR}/kernel)
 include_directories(${PROJECT_SOURCE_DIR}/util)
 include_directories(${PROJECT_SOURCE_DIR}/test)
+include_directories(${PROJECT_SOURCE_DIR}/common)
 
 file(GLOB UTIL_SOURCES "util/*.c")
 file(GLOB TEST_SOURCES "test/*.c")
