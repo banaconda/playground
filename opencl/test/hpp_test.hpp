@@ -16,70 +16,39 @@ using namespace module;
 class HppTest
 {
   public:
-    vector<GPU>
-    getGPU()
-    {
-        vector<cl::Platform> allPlatforms;
-        vector<cl::Device> allDevices;
-
-        cl::Platform::get(&allPlatforms);
-        cl::Platform platform;
-        for (auto &p : allPlatforms) {
-            ::string platver = p.getInfo<CL_PLATFORM_VERSION>();
-            printf("%s\n", platver.c_str());
-            platform = p;
-        }
-
-        platform.getDevices(CL_DEVICE_TYPE_GPU, &allDevices);
-        allDevices.pop_back();
-        for (auto &d : allDevices) {
-            ::string version = d.getInfo<CL_DEVICE_VERSION>();
-            cout << version << endl;
-        }
-
-        vector<GPU> gpus;
-        for (auto &device : allDevices) {
-            gpus.push_back(GPU(platform, device));
-        }
-        return gpus;
-    }
-
     HppTest()
     {
-        vector<GPU> gpus = getGPU();
-
+        GPU::initGPUs();
         cl::Context context(GPU::getAllDevices());
-
-        for (auto &gpu : gpus) {
-            gpu.createCommandQueue(context);
-        }
+        vector<GPU> gpus = GPU::getGPUs(context);
+        gpus.pop_back();
 
         // KERNEL
         cl::Program program =
             Kernel::buildProgram(context, GPU::getAllDevices(), vector<::string>{"kernel/test.cl", "kernel/test2.cl"});
-
-
         auto k_memcpy = cl::KernelFunctor<cl::Buffer, cl::Buffer, int>(program, "memcpy");
 
+        // QUEUE (DATA)
         size_t group_size = NUM_WORK_ITEMS / gpus.size();
+        gpus[0].addBuffer("dst", CL_MEM_WRITE_ONLY, NUM_WORK_ITEMS * sizeof(cl_uint));
+        gpus[0].addBuffer("src", CL_MEM_WRITE_ONLY, NUM_WORK_ITEMS * sizeof(cl_uint));
 
-        cl::Buffer d_dst(context, CL_MEM_WRITE_ONLY, NUM_WORK_ITEMS * sizeof(cl_uint));
-        cl::Buffer d_src(context, CL_MEM_READ_ONLY, NUM_WORK_ITEMS * sizeof(cl_uint));
-
-        cout << GPU::getAllDevices().size() << endl;
-
-        cl_uint h_dst[NUM_WORK_ITEMS];
+        cl_uint h_dst[NUM_WORK_ITEMS] = {
+            0,
+        };
         cl_uint h_src[NUM_WORK_ITEMS];
 
-        try {
-            gpus[0].queue.enqueueWriteBuffer(d_dst, CL_TRUE, 0, NUM_WORK_ITEMS * sizeof(cl_uint), &h_dst[0]);
-            gpus[0].queue.enqueueWriteBuffer(d_src, CL_TRUE, 0, NUM_WORK_ITEMS * sizeof(cl_uint), &h_src[0]);
-        } catch (cl::Error err) {
-            cout << err.err() << endl;
+        for (int i = 0; i < NUM_WORK_ITEMS; i++) {
+            h_src[i] = i + 1;
         }
 
-        k_memcpy(cl::EnqueueArgs(gpus[0].queue, cl::NDRange(0), cl::NDRange(group_size), cl::NDRange(1)), d_dst, d_src, 0);
-        // gpus[0].runKernel<>(k_memcpy, 0, group_size, 1, d_dst, d_src, 0);
+        gpus[0].writeBuffer("dst", CL_TRUE, 0, NUM_WORK_ITEMS * sizeof(cl_uint), &h_dst[0]);
+        gpus[0].writeBuffer("src", CL_TRUE, 0, NUM_WORK_ITEMS * sizeof(cl_uint), &h_src[0]);
+
+        // k_memcpy(cl::EnqueueArgs(gpus[0].queue, cl::NDRange(0), cl::NDRange(group_size), cl::NDRange(1)), d_dst,
+        // d_src, 0);
+        gpus[0].runKernel<>(k_memcpy, 0, NUM_WORK_ITEMS, 1, gpus[0].getBuffer("dst"), gpus[0].getBuffer("src"), 0);
+        gpus[0].readBuffer("dst", CL_TRUE, 0, NUM_WORK_ITEMS * sizeof(cl_uint), &h_dst[0]);
 
         // // for (auto device : gpus) {
         //     k_memcpy(cl::EnqueueArgs(device.queue, cl::NDRange(0), cl::NDRange(group_size), cl::NDRange(1)),
@@ -117,23 +86,23 @@ class HppTest
         //     sizeof(cl_uint), &h_src[offset]); offset += group_size;
         // }
 
-        // int count = 0;
-        // for (auto i : h_dst) {
-        //     if (count++ % group_size == 0) {
-        //         cout << " | ";
-        //     }
-        //     cout << i << " ";
-        // }
-        // cout << " | " << endl;
+        int count = 0;
+        for (auto i : h_dst) {
+            if (count++ % group_size == 0) {
+                cout << " | ";
+            }
+            printf("%02d ", i);
+        }
+        cout << " | " << endl;
 
-        // for (auto i : h_src) {
-        //     if (count++ % group_size == 0) {
-        //         cout << " | ";
-        //     }
-        //     cout << i << " ";
-        // }
-        // cout << " | " << endl;
+        for (auto i : h_src) {
+            if (count++ % group_size == 0) {
+                cout << " | ";
+            }
+            printf("%02d ", i);
+        }
+        cout << " | " << endl;
 
-        // cout << endl;
+        cout << endl;
     }
 };
