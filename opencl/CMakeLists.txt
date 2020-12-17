@@ -16,7 +16,7 @@ file(GLOB UTIL_SOURCES "util/*.c")
 file(GLOB TEST_SOURCES "test/*.c")
 
 add_executable(opencl main.cpp ${UTILS_SOURCES})
-TARGET_LINK_LIBRARIES(opencl OpenCL clBLAS)
+TARGET_LINK_LIBRARIES(opencl OpenCL clBLAS clblast)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
