@@ -10,9 +10,11 @@
 #include <vector>
 
 #include <clblast.h>
+#include <clBLAS.h>
 
 #include "kernel.hpp"
 #include "../common/Module.hpp"
+#include "../common/Matrix.hpp"
 
 using namespace std;
 using namespace module;
@@ -89,9 +91,12 @@ class HppTest
         cout << endl;
 
 
-        const size_t m = 128;
-        const size_t n = 64;
-        const size_t k = 512;
+        // const size_t m = 128;
+        // const size_t n = 64;
+        // const size_t k = 512;
+        const size_t m = 16;
+        const size_t n = 8;
+        const size_t k = 65535;
         const float alpha = 0.7f;
         const float beta = 1.0f;
         const auto a_ld = k;
@@ -119,21 +124,14 @@ class HppTest
         gpu.writeBuffer("b", CL_TRUE, 0, host_b.size() * sizeof(float), host_b.data());
         gpu.writeBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
 
-        auto event = cl_event{nullptr};
+        Matrix A(gpu.getBuffer("a"), m, k);
+        Matrix B(gpu.getBuffer("b"), k, n);
+        Matrix C(gpu.getBuffer("c"), m, n);
 
-        auto start_time = std::chrono::steady_clock::now();
-        auto status = clblast::Gemm(clblast::Layout::kRowMajor, clblast::Transpose::kNo, clblast::Transpose::kNo, m, n,
-                                    k, alpha, gpu.getBuffer("a")(), 0, a_ld, gpu.getBuffer("b")(), 0, b_ld, beta,
-                                    gpu.getBuffer("c")(), 0, c_ld, &gpu.queue(), &event);
-        if (status == clblast::StatusCode::kSuccess) {
-            clWaitForEvents(1, &event);
-            clReleaseEvent(event);
-        }
+        auto status = Matrix::Gemm(gpu.queue, alpha, A, B, beta, C);
 
-        auto elapsed_time = std::chrono::steady_clock::now() - start_time;
-        auto time_ms = std::chrono::duration<double, std::milli>(elapsed_time).count();
+        gpu.readBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
 
-        // Example completed. See "clblast.h" for status codes (0 -> success).
-        printf("Completed SGEMM in %.3lf ms with status %d\n", time_ms, static_cast<int>(status));
+        cout << Matrix::toString(host_c, m, n);
     }
 };
