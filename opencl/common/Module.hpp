@@ -42,11 +42,11 @@ class GPU
 
     template <typename T>
     void
-    addBuffer(string name, cl_mem_flags flags, size_t size, const vector<T> &vec)
+    addBuffer(string name, cl_mem_flags flags, const vector<T> &vec)
     {
-        cl::Buffer buffer(this->context, flags, size);
+        cl::Buffer buffer(this->context, flags, vec.size() * sizeof(T));
         bufferMap.insert(make_pair(name, buffer));
-        this->queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, size, vec.data());
+        this->queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, vec.size() * sizeof(T), vec.data());
     }
 
     void

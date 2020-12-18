@@ -90,44 +90,82 @@ class HppTest
 
         cout << endl;
 
+        blasTest(gpus[0]);
+    }
+
+    void
+    blasTest(GPU &gpu)
+    {
+
         // const size_t m = 128;
         // const size_t n = 64;
         // const size_t k = 512;
-        const size_t m = 16;
-        const size_t n = 8;
-        const size_t k = 65535;
-        const float alpha = 0.7f;
-        const float beta = 1.0f;
-        const auto a_ld = k;
-        const auto b_ld = n;
-        const auto c_ld = n;
+        // const size_t m = 16;
+        // const size_t n = 8;
+        // const size_t k = 65535;
+        // const float alpha = 0.7f;
+        // const float beta = 1.0f;
+        // const auto a_ld = k;
+        // const auto b_ld = n;
+        // const auto c_ld = n;
 
-        auto host_a = std::vector<float>(m * k);
-        auto host_b = std::vector<float>(n * k);
-        auto host_c = std::vector<float>(m * n);
-        for (auto &item : host_a) {
-            item = 12.193f;
+        // auto host_a = std::vector<float>(m * k);
+        // auto host_b = std::vector<float>(n * k);
+        // auto host_c = std::vector<float>(m * n);
+        // for (auto &item : host_a) {
+        //     item = 12.193f;
+        // }
+        // for (auto &item : host_b) {
+        //     item = -8.199f;
+        // }
+        // for (auto &item : host_c) {
+        //     item = 0.0f;
+        // }
+
+        // gpu.addBuffer("a", CL_MEM_READ_ONLY, host_a);
+        // gpu.addBuffer("b", CL_MEM_READ_ONLY, host_b);
+        // gpu.addBuffer("c", CL_MEM_READ_WRITE, host_c);
+
+        // blas::Matrix A(gpu.getBuffer("a"), m, k);
+        // blas::Matrix B(gpu.getBuffer("b"), k, n);
+        // blas::Matrix C(gpu.getBuffer("c"), m, n);
+
+        // auto status = blas::Gemm(gpu.queue, alpha, A, B, beta, C);
+
+        // gpu.readBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
+
+        // cout << blas::Matrix::toString(host_c, m, n);
+
+        size_t m =  3;
+        size_t n =  3;
+
+        auto host_A = vector<float>(m * n);
+        auto host_X = vector<float>(m);
+        auto host_Y = vector<float>(m);
+        for (int i = 0; i < m * n; i++) {
+            host_A[i] = i + 1;
         }
-        for (auto &item : host_b) {
-            item = -8.199f;
+
+        for (int i = 0; i < m; i++) {
+            host_X[i] = (i + 1) * 2;
         }
-        for (auto &item : host_c) {
+
+        for (auto &item : host_Y) {
             item = 0.0f;
         }
 
-        GPU gpu = gpus[0];
-        gpu.addBuffer("a", CL_MEM_READ_WRITE, host_a.size() * sizeof(float), host_a);
-        gpu.addBuffer("b", CL_MEM_READ_WRITE, host_b.size() * sizeof(float), host_b);
-        gpu.addBuffer("c", CL_MEM_READ_WRITE, host_c.size() * sizeof(float), host_c);
+        gpu.addBuffer("A", CL_MEM_READ_WRITE, host_A);
+        gpu.addBuffer("X", CL_MEM_READ_WRITE, host_X);
+        gpu.addBuffer("Y", CL_MEM_READ_WRITE, host_Y);
 
-        blas::Matrix A(gpu.getBuffer("a"), m, k);
-        blas::Matrix B(gpu.getBuffer("b"), k, n);
-        blas::Matrix C(gpu.getBuffer("c"), m, n);
+        blas::Matrix A(gpu.getBuffer("A"), m, n);
+        blas::Vector X(gpu.getBuffer("X"), m);
+        blas::Vector Y(gpu.getBuffer("Y"), m);
 
-        auto status = blas::Gemm(gpu.queue, alpha, A, B, beta, C);
+        auto status = blas::Gemv(gpu.queue, 1.f, A, X, 0.f, Y);
 
-        gpu.readBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
+        gpu.readBuffer("Y", CL_TRUE, 0, host_Y.size() * sizeof(float), host_Y.data());
 
-        cout << blas::Matrix::toString(host_c, m, n);
+        cout << blas::Vector::toString(host_Y, m) << endl;
     }
 };
