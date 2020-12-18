@@ -12,9 +12,9 @@
 #include <clblast.h>
 #include <clBLAS.h>
 
-#include "kernel.hpp"
-#include "../common/Module.hpp"
-#include "../common/Matrix.hpp"
+#include "Kernel.hpp"
+#include "Module.hpp"
+#include "Blas.hpp"
 
 using namespace std;
 using namespace module;
@@ -90,7 +90,6 @@ class HppTest
 
         cout << endl;
 
-
         // const size_t m = 128;
         // const size_t n = 64;
         // const size_t k = 512;
@@ -117,21 +116,18 @@ class HppTest
         }
 
         GPU gpu = gpus[0];
-        gpu.addBuffer("a", CL_MEM_READ_WRITE, host_a.size() * sizeof(float));
-        gpu.addBuffer("b", CL_MEM_READ_WRITE, host_b.size() * sizeof(float));
-        gpu.addBuffer("c", CL_MEM_READ_WRITE, host_c.size() * sizeof(float));
-        gpu.writeBuffer("a", CL_TRUE, 0, host_a.size() * sizeof(float), host_a.data());
-        gpu.writeBuffer("b", CL_TRUE, 0, host_b.size() * sizeof(float), host_b.data());
-        gpu.writeBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
+        gpu.addBuffer("a", CL_MEM_READ_WRITE, host_a.size() * sizeof(float), host_a);
+        gpu.addBuffer("b", CL_MEM_READ_WRITE, host_b.size() * sizeof(float), host_b);
+        gpu.addBuffer("c", CL_MEM_READ_WRITE, host_c.size() * sizeof(float), host_c);
 
-        Matrix A(gpu.getBuffer("a"), m, k);
-        Matrix B(gpu.getBuffer("b"), k, n);
-        Matrix C(gpu.getBuffer("c"), m, n);
+        blas::Matrix A(gpu.getBuffer("a"), m, k);
+        blas::Matrix B(gpu.getBuffer("b"), k, n);
+        blas::Matrix C(gpu.getBuffer("c"), m, n);
 
-        auto status = Matrix::Gemm(gpu.queue, alpha, A, B, beta, C);
+        auto status = blas::Gemm(gpu.queue, alpha, A, B, beta, C);
 
         gpu.readBuffer("c", CL_TRUE, 0, host_c.size() * sizeof(float), host_c.data());
 
-        cout << Matrix::toString(host_c, m, n);
+        cout << blas::Matrix::toString(host_c, m, n);
     }
 };

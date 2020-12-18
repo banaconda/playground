@@ -19,6 +19,9 @@
 //                 cl_mem temp_buffer = nullptr);
 
 using namespace std;
+namespace blas
+{
+
 class Matrix
 {
   public:
@@ -30,36 +33,6 @@ class Matrix
         this->buffer = buffer;
         this->m = m;
         this->n = n;
-    }
-
-    template <typename T>
-    static clblast::StatusCode
-    Gemm(cl::CommandQueue &queue, const T alpha, Matrix &A, Matrix &B, const T beta, Matrix &C)
-    {
-        if (A.m != C.m || B.n != C.n || A.n != B.m) {
-            return clblast::StatusCode::kInvalidDimension;
-        }
-
-        size_t m = C.m;
-        size_t n = C.n;
-        size_t k = A.n;
-
-        auto event = cl_event{nullptr};
-        auto status =
-            clblast::Gemm(clblast::Layout::kRowMajor, clblast::Transpose::kNo, clblast::Transpose::kNo, m, n, k,
-                          alpha,            //
-                          A.buffer(), 0, k, //
-                          B.buffer(), 0, n, //
-                          beta,             //
-                          C.buffer(), 0, n, //
-                          &queue(), &event);
-
-        if (status == clblast::StatusCode::kSuccess) {
-            clWaitForEvents(1, &event);
-            clReleaseEvent(event);
-        }
-
-        return status;
     }
 
     template <typename T>
@@ -77,3 +50,34 @@ class Matrix
         return str;
     }
 };
+
+template <typename T>
+static clblast::StatusCode
+Gemm(cl::CommandQueue &queue, const T alpha, Matrix &A, Matrix &B, const T beta, Matrix &C)
+{
+    if (A.m != C.m || B.n != C.n || A.n != B.m) {
+        return clblast::StatusCode::kInvalidDimension;
+    }
+
+    size_t m = C.m;
+    size_t n = C.n;
+    size_t k = A.n;
+
+    auto event = cl_event{nullptr};
+    auto status = clblast::Gemm(clblast::Layout::kRowMajor, clblast::Transpose::kNo, clblast::Transpose::kNo, m, n, k,
+                                alpha,            //
+                                A.buffer(), 0, k, //
+                                B.buffer(), 0, n, //
+                                beta,             //
+                                C.buffer(), 0, n, //
+                                &queue(), &event);
+
+    if (status == clblast::StatusCode::kSuccess) {
+        clWaitForEvents(1, &event);
+        clReleaseEvent(event);
+    }
+
+    return status;
+}
+
+} // namespace blas

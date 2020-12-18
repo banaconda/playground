@@ -40,6 +40,15 @@ class GPU
         bufferMap.insert(make_pair(name, buffer));
     }
 
+    template <typename T>
+    void
+    addBuffer(string name, cl_mem_flags flags, size_t size, const vector<T> &vec)
+    {
+        cl::Buffer buffer(this->context, flags, size);
+        bufferMap.insert(make_pair(name, buffer));
+        this->queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, size, vec.data());
+    }
+
     void
     writeBuffer(string name, cl_bool blocking, size_t offset, size_t size, const void *ptr)
     {

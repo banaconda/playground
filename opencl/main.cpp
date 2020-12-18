@@ -1,4 +1,4 @@
-#include "hpp_test.hpp"
+#include "HppTest.hpp"
 
 int
 main(int argc, char **argv)
