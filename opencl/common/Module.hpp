@@ -56,11 +56,27 @@ class GPU
         this->queue.enqueueWriteBuffer(buffer, blocking, offset, size, ptr);
     }
 
+    template <typename T>
+    void
+    writeBuffer(string name, const vector<T> &vec)
+    {
+        cl::Buffer buffer = bufferMap.find(name)->second;
+        this->queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, vec.size() * sizeof(T), vec.data());
+    }
+
     void
     readBuffer(string name, cl_bool blocking, size_t offset, size_t size, void *ptr)
     {
         cl::Buffer buffer = bufferMap.find(name)->second;
         this->queue.enqueueReadBuffer(buffer, blocking, offset, size, ptr);
+    }
+
+    template <typename T>
+    void
+    readBuffer(string name, vector<T> &vec)
+    {
+        cl::Buffer buffer = bufferMap.find(name)->second;
+        this->queue.enqueueReadBuffer(buffer, CL_TRUE, 0, vec.size() * sizeof(T), vec.data());
     }
 
     cl::Buffer

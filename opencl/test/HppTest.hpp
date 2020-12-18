@@ -164,7 +164,7 @@ class HppTest
 
         auto status = blas::Gemv(gpu.queue, 1.f, A, X, 0.f, Y);
 
-        gpu.readBuffer("Y", CL_TRUE, 0, host_Y.size() * sizeof(float), host_Y.data());
+        gpu.readBuffer("Y", host_Y);
 
         cout << blas::Vector::toString(host_Y, m) << endl;
     }
