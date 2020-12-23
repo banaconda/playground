@@ -1,8 +1,22 @@
 from socket import *
-from message import *
 import threading
 import time
 import queue
+
+from MessageQueue import *
+
+class Server:
+    def __init__(self, host, port):
+        s = socket(AF_INET, SOCK_STREAM)
+        s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
+        s.bind((host, port))
+        s.listen()
+
+        while True:
+            conn, addr = s.accept()
+            print(conn, addr)
+
 
 
 def event_handler(queue1, queue2):
@@ -31,6 +45,9 @@ def sender(conn, queue2):
 
 
 if __name__ == '__main__':
+    msg_queue = MessageQueue()
+
+    msg_queue.add_queue('')
     queue1 = queue.Queue()
     queue2 = queue.Queue()
 

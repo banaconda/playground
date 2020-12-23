@@ -1,10 +1,10 @@
 from socket import *
-from message import *
-
 import json
 import threading
 import time
 import queue
+
+from MessageQueue import *
 
 
 def recevier(s, queue1):
