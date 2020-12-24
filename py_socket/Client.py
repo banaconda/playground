@@ -15,8 +15,11 @@ def recevier(s, queue1):
 
 def sender(s, queue1):
     d = {
-        'data': 10,
-        'data2': 20,
+        'cmd': 'get_min_chart',
+        'data':
+        {
+            'code': '005930'
+        }
     }
 
     while True:

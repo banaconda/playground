@@ -3,7 +3,7 @@ import json
 import time
 import threading
 
-from Module import *
+from Module import Module
 
 
 class External:
@@ -18,7 +18,6 @@ class External:
     def tr_logic(self):
         while True:
             data = self.tr_queue.get()
-            req = json.dumps(data)
             time.sleep(1)
             self.module.tr_slot()
 
@@ -27,17 +26,7 @@ class External:
         t.start()
 
         while True:
-            data = self.request_queue.get()
-            req = json.dumps(data)
+            req = self.request_queue.get()
             self.response_queue.put(req)
             if req['name'] == 'tr':
                 self.tr_queue.put(req)
-
-
-if __name__ == '__main__':
-    request_queue = queue.Queue()
-    response_queue = queue.Queue()
-    m = Module()
-
-    e = External(m, request_queue, response_queue)
-    e.run()
