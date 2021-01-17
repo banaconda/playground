@@ -1,14 +1,13 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#include <time.h>
+#include <chrono>
 
 using namespace std;
 
 int
 main(int argc, char **argv)
 {
-    const auto processor_count = std::thread::hardware_concurrency();
     int n = 32;
     if (argc == 1) {
     } else if (argc == 2) {
@@ -31,7 +30,7 @@ main(int argc, char **argv)
         }
     };
 
-    clock_t start = clock();
+    auto start = chrono::high_resolution_clock::now();
     vector<thread> threads(n);
     for (int i = 0; i < n; i++) {
         threads[i] = thread(f, i, 1000);
@@ -41,10 +40,8 @@ main(int argc, char **argv)
         threads[i].join();
     }
 
-    clock_t end = clock();
-    cout << "done. it took "
-         << (((float)(end - start)) / CLOCKS_PER_SEC) /
-                ((n <= processor_count) ? n : processor_count)
-         << " seconds" << endl;
+    auto end = chrono::high_resolution_clock::now();
+    auto nanosec = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    cout << "done. it took " << nanosec / 1000000000 << "." << nanosec % 1000000000 << " seconds" << endl;
     return 0;
 }
