@@ -8,6 +8,7 @@ using namespace std;
 int
 main(int argc, char **argv)
 {
+    const auto processor_count = std::thread::hardware_concurrency();
     int n = 32;
     if (argc == 1) {
     } else if (argc == 2) {
@@ -41,6 +42,9 @@ main(int argc, char **argv)
     }
 
     clock_t end = clock();
-    cout << "done. it took " << (((float)(end - start)) / CLOCKS_PER_SEC) / n << " seconds" << endl;
+    cout << "done. it took "
+         << (((float)(end - start)) / CLOCKS_PER_SEC) /
+                ((n <= processor_count) ? n : processor_count)
+         << " seconds" << endl;
     return 0;
 }
