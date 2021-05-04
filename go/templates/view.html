@@ -1,0 +1,39 @@
+
+<h1>{{.Title}}</h1>
+
+<p>[<a href="/edit/{{.Title}}">edit</a>]</p>
+
+{{range .List }}
+    <p> {{.}} </p>
+{{end}}
+
+<div>{{printf "%s" .Body}}</div>
+
+<!doctype html>
+<html lang="en">
+<style>
+div {
+padding: 0px;
+margin: 0px;
+}
+</style>
+<head>
+    <meta charset="UTF-8" />
+    <title> {{.Title}} </title>
+
+
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.52.0/dist/phaser.js"></script>
+    <script type="text/javascript">
+        var title = {{.Title}};
+    </script>
+    <script type="text/javascript" src='/js/test.js'></script>
+</head>
+<body>
+    {{template "header"}}
+    <div id="main-screen">
+    </div>
+    {{template "footer"}}
+
+</body>
+
+</html>
