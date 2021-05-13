@@ -33,7 +33,7 @@ socket.onopen = function () {
 socket.onmessage = function (e) {
     console.log("Server: " + e.data + "\n");
     text.text = "messgae: " + count;
-    count++
+    count++;
 };
 
 function send() {

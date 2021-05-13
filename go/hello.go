@@ -46,11 +46,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, err := loadPage(title)
-	p.List = []string{"first", "second", "third"}
 	if err != nil {
 		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
 		return
 	}
+	p.List = []string{"first", "second", "third"}
 	renderTemplate(w, "view", p)
 }
 
